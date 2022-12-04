@@ -1,0 +1,8 @@
+name = "mojang-api-cache"
+main = "src/index.ts"
+compatibility_date = "2022-12-02"
+
+kv_namespaces = [
+    { binding = "USER_KV", id = "0f58145334634ebbad3634a4a3c3b3ff", preview_id = "0f58145334634ebbad3634a4a3c3b3ff" },
+    { binding = "UUID_KV", id = "c1bec375e62344cdb3134376747104c3", preview_id = "c1bec375e62344cdb3134376747104c3" },
+]
