@@ -56,14 +56,14 @@ user.get("/:username", async (context) => {
             }
         }
     }
-    let data = await USER_KV.get<SkinResponse>(uuid!!);
+    let data : string | null = await USER_KV.get(uuid!!);
     if (data === null) {
         const textureDataResponse = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`);
         if (textureDataResponse.ok) {
             const texture = await textureDataResponse.json<SkinResponse>()
             if (texture !== null) {
                 const properties = texture.properties[0].value;
-                data = {
+                const json =  {
                     id: parseUUID(texture.id)!!,
                     name: texture.name,
                     properties: [
@@ -73,12 +73,14 @@ user.get("/:username", async (context) => {
                         }
                     ]
                 }
-                await USER_KV.put(uuid!!, JSON.stringify(data), {expirationTtl: 60 * 60 * 24});
+                await USER_KV.put(uuid!!, JSON.stringify(json), {expirationTtl: 60 * 60 * 24});
+                data = JSON.stringify(json);
             }
         } else {
             return textureDataResponse;
         }
     }
+    console.log(data);
 
 
     if (data !== null) {
