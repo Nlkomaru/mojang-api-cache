@@ -44,19 +44,19 @@ user.get("/:username", async (context) => {
     if (validate(username)) {
         uuid = parseUUID(username.replaceAll("-", ""));
     } else {
-        uuid = await UUID_KV.get(username)
+        uuid = parseUUID(await UUID_KV.get(username))
         if (uuid === null) {
             const uuidResponse = await fetch("https://api.mojang.com/users/profiles/minecraft/" + username);
             if (uuidResponse.ok) {
                 const data: Name = await uuidResponse.json();
-                uuid = data.id;
-                await UUID_KV.put(username, uuid, {expirationTtl: 60 * 60 * 24});
+                uuid = parseUUID(data.id);
+                await UUID_KV.put(username, uuid!!, {expirationTtl: 60 * 60 * 24});
             } else {
                 return uuidResponse
             }
         }
     }
-    let data = await USER_KV.get<SkinResponse>(uuid);
+    let data = await USER_KV.get<SkinResponse>(uuid!!);
     if (data === null) {
         const textureDataResponse = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`);
         if (textureDataResponse.ok) {
@@ -64,7 +64,7 @@ user.get("/:username", async (context) => {
             if (texture !== null) {
                 const properties = texture.properties[0].value;
                 data = {
-                    id: texture.id,
+                    id: parseUUID(texture.id)!!,
                     name: texture.name,
                     properties: [
                         {
@@ -73,7 +73,7 @@ user.get("/:username", async (context) => {
                         }
                     ]
                 }
-                await USER_KV.put(uuid, JSON.stringify(data), {expirationTtl: 60 * 60 * 24});
+                await USER_KV.put(uuid!!, JSON.stringify(data), {expirationTtl: 60 * 60 * 24});
             }
         } else {
             return textureDataResponse;
@@ -82,7 +82,7 @@ user.get("/:username", async (context) => {
 
 
     if (data !== null) {
-        return new Response(JSON.stringify(data), {
+        return new Response(JSON.parse(JSON.stringify(data)), {
             headers: jsonHeader,
             status: 200
         });
@@ -96,7 +96,8 @@ user.get("/:username", async (context) => {
 
 app.route("/user", user);
 
-function parseUUID(uuid: string) {
+function parseUUID(uuid: string | null): string | null {
+    if(!uuid) return null;
     return uuid.replace(/(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})/, "$1-$2-$3-$4-$5");
 }
 
